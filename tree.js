@@ -194,13 +194,12 @@ export default class Tree {
     let queue = [this.root];
 
     while (queue.length !== 0) {
-      const newQueue = [];
-      queue.forEach((item) => {
+      queue.forEach((item, index) => {
         callback(item);
-        if (item.left !== null) newQueue.push(item.left);
-        if (item.right !== null) newQueue.push(item.right);
+        queue.splice(index, 1);
+        if (item.left !== null) queue.push(item.left);
+        if (item.right !== null) queue.push(item.right);
       });
-      queue = newQueue;
     }
   }
 
@@ -208,41 +207,144 @@ export default class Tree {
     if (!callback) throw new Error("Callback function is required!");
     if (queue.length === 0) return;
 
-    const newQueue = [];
-
-    queue.forEach((item) => {
+    queue.forEach((item, index) => {
       callback(item);
-      if (item.left !== null) newQueue.push(item.left);
-      if (item.right !== null) newQueue.push(item.right);
+      queue.splice(index, 1);
+      if (item.left !== null) queue.push(item.left);
+      if (item.right !== null) queue.push(item.right);
     });
 
-    this.levelOrderRec(callback, newQueue);
+    this.levelOrderRec(callback, queue);
+  }
+
+  inOrder(callback, root = this.root) {
+    if (!callback) throw new Error("Callback function is required!");
+    if (root === null) return;
+
+    this.inOrder(callback, root.left);
+    callback(root);
+    this.inOrder(callback, root.right);
+  }
+
+  preOrder(callback, root = this.root) {
+    if (!callback) throw new Error("Callback function is required!");
+    if (root === null) return;
+
+    callback(root);
+    this.preOrder(callback, root.left);
+    this.preOrder(callback, root.right);
+  }
+
+  postOrder(callback, root = this.root) {
+    if (!callback) throw new Error("Callback function is required!");
+    if (root === null) return;
+
+    this.postOrder(callback, root.left);
+    this.postOrder(callback, root.right);
+    callback(root);
+  }
+
+  height(value) {
+    if (!this.find(value)) return false;
+
+    let root = this.root;
+
+    while (root.data !== value) {
+      if (value > root.data) root = root.right;
+      if (value < root.data) root = root.left;
+    }
+
+    let queue = [root];
+    let height = 0;
+
+    while (queue.length !== 0) {
+      const newQueue = [];
+
+      queue.forEach((item) => {
+        if (item.left !== null) newQueue.push(item.left);
+        if (item.right !== null) newQueue.push(item.right);
+      });
+
+      height += 1;
+      queue = newQueue;
+    }
+
+    return height - 1;
+  }
+
+  compareChildren(node) {
+    if (node === null) return -1;
+
+    return (
+      1 +
+      Math.max(
+        this.compareChildren(node.left),
+        this.compareChildren(node.right)
+      )
+    );
+  }
+
+  heightRec(value) {
+    if (!this.find(value)) return false;
+
+    let root = this.root;
+
+    while (root.data !== value) {
+      if (value < root.data) root = root.left;
+      if (value > root.data) root = root.right;
+    }
+
+    return this.compareChildren(root);
+  }
+
+  depth(value) {
+    if (!this.find(value)) return false;
+
+    let root = this.root;
+    let depth = 0;
+
+    while (root.data !== value) {
+      depth += 1;
+      if (value > root.data) {
+        root = root.right;
+      } else if (value < root.data) {
+        root = root.left;
+      }
+    }
+
+    return depth;
+  }
+
+  isBalanced(root = this.root) {
+    if (root === null) return true;
+
+    let leftHeight = this.compareChildren(root.left);
+    let rightHeight = this.compareChildren(root.right);
+
+    if (
+      Math.abs(leftHeight - rightHeight) <= 1 &&
+      this.isBalanced(root.left) == true &&
+      this.isBalanced(root.right) == true
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  rebalance() {
+    const queue = [this.root];
+    const newArr = [];
+
+    while (queue.length !== 0) {
+      queue.forEach((root, index) => {
+        newArr.push(root.data);
+        queue.splice(index, 1);
+        if (root.left !== null) queue.push(root.left);
+        if (root.right !== null) queue.push(root.right);
+      });
+    }
+
+    this.root = this.buildTree(this.removeDuplicates(this.mergeSort(newArr)));
   }
 }
-
-const tree = new Tree([
-  1, 7, 4, 23, 8, 9, 4, 3, 5, 7, 9, 67, 6345, 324, 18, 29, 32, 654, 65, 2,
-]);
-
-const tree2 = new Tree([8, 10, 23, 48, 2, 4, 0]);
-
-const add2 = function (node) {
-  node.data += 2;
-};
-
-const prettyPrint = (node, prefix = "", isLeft = true) => {
-  if (node === null) {
-    return;
-  }
-  if (node.right !== null) {
-    prettyPrint(node.right, `${prefix}${isLeft ? "│   " : "    "}`, false);
-  }
-  console.log(`${prefix}${isLeft ? "└── " : "┌── "}${node.data}`);
-  if (node.left !== null) {
-    prettyPrint(node.left, `${prefix}${isLeft ? "    " : "│   "}`, true);
-  }
-};
-
-prettyPrint(tree.root);
-tree.levelOrder(add2);
-prettyPrint(tree.root);
